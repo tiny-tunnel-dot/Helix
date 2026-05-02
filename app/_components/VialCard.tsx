@@ -1,11 +1,11 @@
-import { differenceInCalendarDays, format, startOfDay } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import { db } from "@/lib/db";
-import { PEPTIDE_LABEL, type Peptide } from "@/lib/protocol";
+import { PEPTIDE_LABEL, fromPrismaDate, todayLocal, type Peptide } from "@/lib/protocol";
 import { Card, CardHeader } from "./Card";
 import { markVialMixed } from "@/app/actions/vials";
 
 export async function VialCard({ peptide }: { peptide: Peptide }) {
-  const today = startOfDay(new Date());
+  const today = todayLocal();
 
   const vials = await db.vial.findMany({
     where: { peptideType: peptide },
@@ -15,16 +15,18 @@ export async function VialCard({ peptide }: { peptide: Peptide }) {
   const active = vials.find((v) => v.active) ?? vials[0];
   const next = vials.find((v) => v.vialNumber === active.vialNumber + 1);
 
-  const totalDays =
-    differenceInCalendarDays(active.rangeEnd, active.rangeStart) + 1;
+  const activeStart = fromPrismaDate(active.rangeStart);
+  const activeEnd = fromPrismaDate(active.rangeEnd);
+
+  const totalDays = differenceInCalendarDays(activeEnd, activeStart) + 1;
   const usedDays = Math.max(
     0,
-    Math.min(totalDays, differenceInCalendarDays(today, active.rangeStart) + 1)
+    Math.min(totalDays, differenceInCalendarDays(today, activeStart) + 1)
   );
   const usedPct = Math.min(1, usedDays / totalDays);
   const daysLeft = Math.max(0, totalDays - usedDays);
 
-  const mixDate = next ? new Date(next.rangeStart) : null;
+  const mixDate = next ? fromPrismaDate(next.rangeStart) : null;
   const daysToMix = mixDate ? differenceInCalendarDays(mixDate, today) : null;
   const mixSoon = daysToMix !== null && daysToMix >= 0 && daysToMix <= 2;
 
@@ -32,7 +34,7 @@ export async function VialCard({ peptide }: { peptide: Peptide }) {
     <Card tone={mixSoon ? "warning" : "default"}>
       <CardHeader
         title={`${PEPTIDE_LABEL[peptide]} Vial ${active.vialNumber}`}
-        subtitle={`${format(active.rangeStart, "MMM d")} → ${format(active.rangeEnd, "MMM d")}`}
+        subtitle={`${format(activeStart, "MMM d")} → ${format(activeEnd, "MMM d")}`}
         right={
           <span className="text-xs text-zinc-400">{daysLeft}d left</span>
         }

@@ -1,12 +1,15 @@
 import Link from "next/link";
-import { format, isSameDay, startOfDay, addDays } from "date-fns";
+import { format, isSameDay, addDays } from "date-fns";
 import { db } from "@/lib/db";
+import { HeaderMenu } from "@/app/_components/HeaderMenu";
 import {
   CYCLE_DAYS,
   CYCLE_START,
   PEPTIDE_LABEL,
   SITE_LABEL,
   SLOT_LABEL,
+  fromPrismaDate,
+  todayLocal,
   type Peptide,
   type Site,
   type Slot,
@@ -16,35 +19,30 @@ import { logInjection, unlogInjection } from "@/app/actions/injections";
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
-  const today = startOfDay(new Date());
+  const today = todayLocal();
   const all = await db.injection.findMany({
     orderBy: [{ scheduledDate: "asc" }, { slot: "asc" }],
   });
 
   const days = Array.from({ length: CYCLE_DAYS }, (_, i) =>
-    startOfDay(addDays(CYCLE_START, i))
+    addDays(CYCLE_START, i)
   );
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
+      <header className="mb-6 flex items-center gap-3">
+        <HeaderMenu />
+        <Link href="/" className="leading-tight">
           <h1 className="text-xl font-semibold tracking-tight">Calendar</h1>
           <p className="text-xs text-zinc-500">
             Full 8-week protocol · edit any day
           </p>
-        </div>
-        <Link
-          href="/"
-          className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900"
-        >
-          ← Dashboard
         </Link>
       </header>
 
       <div className="flex flex-col gap-1.5">
         {days.map((d) => {
-          const dayInj = all.filter((i) => isSameDay(i.scheduledDate, d));
+          const dayInj = all.filter((i) => isSameDay(fromPrismaDate(i.scheduledDate), d));
           const isToday = isSameDay(d, today);
           if (dayInj.length === 0) return null;
           return (

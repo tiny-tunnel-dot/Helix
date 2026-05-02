@@ -4,6 +4,7 @@ import {
   CYCLE_START,
   VIAL_RANGES,
   allScheduledDoses,
+  parseLocalDate,
 } from "../lib/protocol";
 
 const db = new PrismaClient();
@@ -18,6 +19,10 @@ async function main() {
     },
     update: { startDate: CYCLE_START, endDate: CYCLE_END },
   });
+
+  // Wipe unlogged scheduled doses so protocol changes (e.g. shifting on/off
+  // days) don't leave orphaned rows. Logged history is preserved.
+  await db.injection.deleteMany({ where: { loggedAt: null } });
 
   const doses = allScheduledDoses();
   for (const d of doses) {
@@ -53,14 +58,14 @@ async function main() {
       create: {
         peptideType: v.peptideType,
         vialNumber: v.vialNumber,
-        rangeStart: new Date(v.rangeStart),
-        rangeEnd: new Date(v.rangeEnd),
+        rangeStart: parseLocalDate(v.rangeStart),
+        rangeEnd: parseLocalDate(v.rangeEnd),
         active: isFirstActive,
-        mixedAt: isFirstActive ? new Date(v.rangeStart) : null,
+        mixedAt: isFirstActive ? parseLocalDate(v.rangeStart) : null,
       },
       update: {
-        rangeStart: new Date(v.rangeStart),
-        rangeEnd: new Date(v.rangeEnd),
+        rangeStart: parseLocalDate(v.rangeStart),
+        rangeEnd: parseLocalDate(v.rangeEnd),
       },
     });
   }

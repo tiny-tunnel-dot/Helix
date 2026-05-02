@@ -25,7 +25,9 @@ Add **2mL bacteriostatic water** to each 20mg combo vial.
 - BPC-157: 500mcg/day
 - TB-500: 500mcg/day
 
-**Schedule:** CJC/Ipa runs Mon–Fri only. BPC/TB runs every day. Weekends are BPC/TB only (5-on/2-off prevents GH receptor desensitization).
+**Schedule:** CJC/Ipa runs on a rolling **5-on / 2-off** cycle starting Fri May 1 (first off-days are Wed–Thu May 6–7, then May 13–14, etc.). BPC/TB runs every day. (5-on/2-off prevents GH receptor desensitization.)
+
+> The week-by-week breakdown below was written under the original Mon–Fri assumption and is **no longer accurate** — see the `/calendar` page in the app for the live schedule.
 
 ---
 

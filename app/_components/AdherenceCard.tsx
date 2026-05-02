@@ -1,9 +1,9 @@
-import { endOfDay, startOfDay } from "date-fns";
 import { db } from "@/lib/db";
+import { todayLocal } from "@/lib/protocol";
 import { Card, CardHeader, BigStat } from "./Card";
 
 export async function AdherenceCard() {
-  const today = endOfDay(startOfDay(new Date()));
+  const today = todayLocal();
 
   const scheduled = await db.injection.count({
     where: { scheduledDate: { lte: today } },

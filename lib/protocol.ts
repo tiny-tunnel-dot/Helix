@@ -1,7 +1,54 @@
-import { addDays, differenceInCalendarDays, isWeekend, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
 
-export const CYCLE_START = new Date("2026-05-01T00:00:00Z");
-export const CYCLE_END = new Date("2026-06-26T00:00:00Z");
+// Build a Date for the given calendar date at LOCAL midnight. Using local
+// midnight (not UTC midnight) keeps date-fns operations like `format`,
+// `isSameDay`, and `addDays` aligned with the user's perception of the date.
+export function localDate(year: number, month1based: number, day: number): Date {
+  return new Date(year, month1based - 1, day);
+}
+
+// Parse "YYYY-MM-DD" as a local-midnight Date.
+export function parseLocalDate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return localDate(y, m, d);
+}
+
+// Prisma reads `@db.Date` columns as JS Dates at UTC midnight of the stored
+// date. In zones west of UTC that displays as the previous day. This converts
+// such a value back to a local-midnight Date for safe formatting/comparison.
+export function fromPrismaDate(d: Date): Date {
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
+// Local-midnight Date for the user's current calendar day.
+export function todayLocal(): Date {
+  return startOfDay(new Date());
+}
+
+// "YYYY-MM-DD" using local date parts.
+export function formatDateParam(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Parse a "?date=YYYY-MM-DD" param to a local-midnight Date, clamped to the
+// cycle window and never past today.
+export function parseDateParam(raw: string | undefined): Date {
+  if (!raw) return todayLocal();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!m) return todayLocal();
+  const candidate = parseLocalDate(raw);
+  const today = todayLocal();
+  if (candidate < CYCLE_START) return CYCLE_START;
+  if (candidate > today) return today;
+  if (candidate > CYCLE_END) return CYCLE_END;
+  return candidate;
+}
+
+export const CYCLE_START = localDate(2026, 5, 1);
+export const CYCLE_END = localDate(2026, 6, 26);
 export const CYCLE_DAYS = 57;
 
 export type Slot = "AM_CJC" | "MIDDAY_BPC" | "PM_CJC";
@@ -42,10 +89,18 @@ export type ScheduledDose = {
   doseUnits: number;
 };
 
+// CJC/Ipa runs on a rolling 5-on / 2-off cycle starting from CYCLE_START
+// (5-on/2-off prevents GH receptor desensitization). BPC/TB runs every day.
+export function isCjcOnDay(date: Date): boolean {
+  const dayIndex = differenceInCalendarDays(date, CYCLE_START);
+  if (dayIndex < 0) return false;
+  return dayIndex % 7 < 5;
+}
+
 export function scheduledDosesFor(date: Date): ScheduledDose[] {
   const out: ScheduledDose[] = [];
   out.push({ date, slot: "MIDDAY_BPC", peptide: "BPC_TB", doseUnits: 10 });
-  if (!isWeekend(date)) {
+  if (isCjcOnDay(date)) {
     out.push({ date, slot: "AM_CJC", peptide: "CJC_IPA", doseUnits: 5 });
     out.push({ date, slot: "PM_CJC", peptide: "CJC_IPA", doseUnits: 5 });
   }
@@ -55,7 +110,7 @@ export function scheduledDosesFor(date: Date): ScheduledDose[] {
 export function allScheduledDoses(): ScheduledDose[] {
   const out: ScheduledDose[] = [];
   for (let i = 0; i < CYCLE_DAYS; i++) {
-    const d = startOfDay(addDays(CYCLE_START, i));
+    const d = addDays(CYCLE_START, i);
     out.push(...scheduledDosesFor(d));
   }
   return out;

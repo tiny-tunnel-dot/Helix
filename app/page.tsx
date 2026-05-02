@@ -6,38 +6,31 @@ import { WeekStripCard } from "./_components/WeekStripCard";
 import { VialCard } from "./_components/VialCard";
 import { WeightCard } from "./_components/WeightCard";
 import { SiteRotationCard } from "./_components/SiteRotationCard";
-import { logout } from "./actions/auth";
+import { HeaderMenu } from "./_components/HeaderMenu";
+import { parseDateParam } from "@/lib/protocol";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const params = await searchParams;
+  const selectedDate = parseDateParam(params.date);
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
+      <header className="mb-6 flex items-center gap-3">
+        <HeaderMenu />
+        <Link href="/" className="leading-tight">
           <h1 className="text-xl font-semibold tracking-tight">Helix</h1>
           <p className="text-xs text-zinc-500">Peptide protocol tracker</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <Link
-            href="/calendar"
-            className="rounded-lg border border-zinc-800 px-3 py-1.5 text-zinc-300 hover:bg-zinc-900"
-          >
-            Calendar
-          </Link>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="rounded-lg border border-zinc-800 px-3 py-1.5 text-zinc-400 hover:bg-zinc-900"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
+        </Link>
       </header>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <TodayCard />
+        <TodayCard date={selectedDate} />
         <CycleProgressCard />
         <AdherenceCard />
 

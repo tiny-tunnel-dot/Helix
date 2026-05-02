@@ -1,9 +1,9 @@
-import { startOfDay, format } from "date-fns";
-import { CYCLE_DAYS, CYCLE_END, dayOfCycle } from "@/lib/protocol";
+import { format } from "date-fns";
+import { CYCLE_DAYS, CYCLE_END, dayOfCycle, todayLocal } from "@/lib/protocol";
 import { Card, CardHeader } from "./Card";
 
 export function CycleProgressCard() {
-  const today = startOfDay(new Date());
+  const today = todayLocal();
   const day = dayOfCycle(today);
   const pct = Math.min(1, day / CYCLE_DAYS);
 

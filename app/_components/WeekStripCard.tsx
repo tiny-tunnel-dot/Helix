@@ -1,15 +1,18 @@
-import { addDays, format, isSameDay, startOfDay, startOfWeek } from "date-fns";
+import { addDays, format, isSameDay, startOfWeek } from "date-fns";
 import { db } from "@/lib/db";
+import { fromPrismaDate, todayLocal } from "@/lib/protocol";
 import { Card, CardHeader } from "./Card";
 
 export async function WeekStripCard() {
-  const today = startOfDay(new Date());
+  const today = todayLocal();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
   const weekEnd = addDays(weekStart, 6);
 
+  // Pad the range bounds out a day on either side so timezone-extracted UTC
+  // dates don't trim the actual week edges.
   const injections = await db.injection.findMany({
     where: {
-      scheduledDate: { gte: weekStart, lte: weekEnd },
+      scheduledDate: { gte: addDays(weekStart, -1), lte: addDays(weekEnd, 1) },
     },
     orderBy: { scheduledDate: "asc" },
   });
@@ -17,7 +20,7 @@ export async function WeekStripCard() {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = addDays(weekStart, i);
     const dayInj = injections.filter((inj) =>
-      isSameDay(new Date(inj.scheduledDate), d)
+      isSameDay(fromPrismaDate(inj.scheduledDate), d)
     );
     const total = dayInj.length;
     const done = dayInj.filter((i) => i.loggedAt).length;

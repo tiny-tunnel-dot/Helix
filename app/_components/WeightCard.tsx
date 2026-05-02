@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { db } from "@/lib/db";
+import { fromPrismaDate } from "@/lib/protocol";
 import { Card, CardHeader } from "./Card";
 import { WeightChart } from "./WeightChart";
 import { WeightInput } from "./WeightInput";
@@ -22,7 +23,7 @@ export async function WeightCard() {
         right={
           today && (
             <span className="text-xs text-zinc-400">
-              {today.weight}lb · {format(today.date, "MMM d")}
+              {today.weight}lb · {format(fromPrismaDate(today.date), "MMM d")}
             </span>
           )
         }
@@ -54,7 +55,7 @@ export async function WeightCard() {
         <div className="h-24 flex-1">
           <WeightChart
             data={entries.map((e) => ({
-              date: format(e.date, "MMM d"),
+              date: format(fromPrismaDate(e.date), "MMM d"),
               weight: e.weight,
             }))}
           />
