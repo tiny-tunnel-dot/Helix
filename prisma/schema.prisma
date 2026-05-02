@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CycleConfig {
+  id        String   @id @default("singleton")
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+}
+
+model Injection {
+  id            String    @id @default(cuid())
+  scheduledDate DateTime  @db.Date
+  slot          String
+  peptide       String
+  doseUnits     Int
+  loggedAt      DateTime?
+  site          String?
+  notes         String?
+
+  @@unique([scheduledDate, slot])
+  @@index([scheduledDate])
+}
+
+model Vial {
+  id          String    @id @default(cuid())
+  peptideType String
+  vialNumber  Int
+  mixedAt     DateTime?
+  rangeStart  DateTime  @db.Date
+  rangeEnd    DateTime  @db.Date
+  active      Boolean   @default(false)
+
+  @@unique([peptideType, vialNumber])
+}
+
+model WeightEntry {
+  id     String   @id @default(cuid())
+  date   DateTime @unique @db.Date
+  weight Float
+}
