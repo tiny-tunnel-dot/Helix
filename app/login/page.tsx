@@ -1,3 +1,4 @@
+import HelixLogo from "../_components/HelixLogo";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage({
@@ -9,10 +10,9 @@ export default async function LoginPage({
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8">
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight">Helix</h1>
-        <p className="mb-6 text-sm text-zinc-400">
-          Peptide protocol tracker
-        </p>
+        <div className="mb-6">
+          <HelixLogo size="md" subtitle="Peptide Protocol" />
+        </div>
         <LoginForm from={params.from ?? "/"} />
       </div>
     </main>

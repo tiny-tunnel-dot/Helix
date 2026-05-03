@@ -16,7 +16,8 @@ import {
   type Slot,
 } from "@/lib/protocol";
 import { Card } from "./Card";
-import { logInjection, unlogInjection } from "@/app/actions/injections";
+import { LogDoseButton } from "./LogDoseButton";
+import { unlogInjection } from "@/app/actions/injections";
 
 const SLOT_SHORT: Record<Slot, string> = {
   AM_CJC: "Morning",
@@ -112,11 +113,15 @@ export async function TodayCard({ date }: { date: Date }) {
                     </span>
                   </div>
                 </div>
-                <ToggleButton
-                  id={inj.id}
-                  logged={logged}
-                  suggestedSite={suggestedSite}
-                />
+                {logged ? (
+                  <UnlogButton id={inj.id} />
+                ) : (
+                  <LogDoseButton
+                    id={inj.id}
+                    peptide={peptide}
+                    suggestedSite={suggestedSite}
+                  />
+                )}
               </li>
             );
           })}
@@ -195,49 +200,28 @@ function SiteChip({ site }: { site: Site }) {
   );
 }
 
-function ToggleButton({
-  id,
-  logged,
-  suggestedSite,
-}: {
-  id: string;
-  logged: boolean;
-  suggestedSite: Site;
-}) {
-  if (logged) {
-    return (
-      <form action={unlogInjection}>
-        <input type="hidden" name="id" value={id} />
-        <button
-          type="submit"
-          aria-label="Mark not logged"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500/60 bg-emerald-500/20 text-emerald-300 transition-colors hover:bg-emerald-500/30"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="5 12 10 17 19 7" />
-          </svg>
-        </button>
-      </form>
-    );
-  }
+function UnlogButton({ id }: { id: string }) {
   return (
-    <form action={logInjection}>
+    <form action={unlogInjection}>
       <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="site" value={suggestedSite} />
       <button
         type="submit"
-        aria-label="Mark logged"
-        className="h-11 w-11 shrink-0 rounded-full border-2 border-zinc-700 bg-transparent transition-colors hover:border-emerald-500/60 hover:bg-emerald-500/10"
-      />
+        aria-label="Mark not logged"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500/60 bg-emerald-500/20 text-emerald-300 transition-colors hover:bg-emerald-500/30"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="5 12 10 17 19 7" />
+        </svg>
+      </button>
     </form>
   );
 }
@@ -252,12 +236,12 @@ function NavArrow({
   dir: "prev" | "next";
 }) {
   const cls =
-    "flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800";
+    "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-zinc-800 active:bg-zinc-800";
   const label = dir === "prev" ? "Previous day" : "Next day";
   const arrow = (
     <svg
-      width="14"
-      height="14"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

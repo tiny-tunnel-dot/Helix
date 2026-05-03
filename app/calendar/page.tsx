@@ -45,6 +45,7 @@ export default async function CalendarPage() {
         {days.map((d) => {
           const dayInj = all.filter((i) => isSameDay(fromPrismaDate(i.scheduledDate), d));
           const isToday = isSameDay(d, today);
+          const isFuture = d > today;
           if (dayInj.length === 0) return null;
           return (
             <div
@@ -53,7 +54,7 @@ export default async function CalendarPage() {
                 isToday
                   ? "border-emerald-500/40 bg-emerald-500/5"
                   : "border-zinc-800 bg-zinc-900/40"
-              } p-3`}
+              } ${isFuture ? "opacity-60" : ""} p-3`}
             >
               <div className="mb-2 flex items-center justify-between">
                 <div
@@ -107,7 +108,7 @@ export default async function CalendarPage() {
                             undo
                           </button>
                         </form>
-                      ) : (
+                      ) : isFuture ? null : (
                         <form action={logInjection} className="flex gap-1">
                           <input type="hidden" name="id" value={inj.id} />
                           <input type="hidden" name="site" value="stomach_L" />

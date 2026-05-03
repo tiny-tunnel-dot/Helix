@@ -65,6 +65,13 @@ export function HeaderMenu() {
           >
             Calendar
           </Link>
+          <Link
+            href="/vials"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800"
+          >
+            Vials
+          </Link>
           <form action={logout}>
             <button
               type="submit"

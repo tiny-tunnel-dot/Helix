@@ -168,8 +168,35 @@ export function nextSiteFor(
   );
   if (used.length === 0) return allowed[0];
 
+  // BPC/TB: alternate body part each dose (stomach -> shoulder -> stomach -> ...);
+  // within each body part, alternate L/R from the last time that part was used.
+  if (peptide === "BPC_TB") {
+    const lastSite = used[0];
+    const [lastPart] = lastSite.split("_") as ["stomach" | "shoulder", "L" | "R"];
+    const nextPart: "stomach" | "shoulder" =
+      lastPart === "stomach" ? "shoulder" : "stomach";
+    const lastAtNextPart = used.find((s) => s.startsWith(`${nextPart}_`));
+    if (!lastAtNextPart) return `${nextPart}_L` as Site;
+    const lastSide = lastAtNextPart.endsWith("_L") ? "L" : "R";
+    const nextSide: "L" | "R" = lastSide === "L" ? "R" : "L";
+    return `${nextPart}_${nextSide}` as Site;
+  }
+
+  // CJC/Ipa: simple round-robin through allowed sites.
   const lastIndex = allowed.indexOf(used[0]);
   return allowed[(lastIndex + 1) % allowed.length];
+}
+
+// Derived from docs/peptide-protocol-calendar.md:
+//   BPC/TB: 0.1 mL/day, 2 mL/vial → 20 days inclusive
+//   CJC/Ipa: 0.1 mL on 5-on/2-off → ~20 dosing days ≈ 28 calendar days inclusive
+export const VIAL_DURATION_DAYS: Record<Peptide, number> = {
+  BPC_TB: 20,
+  CJC_IPA: 28,
+};
+
+export function suggestVialEnd(peptide: Peptide, start: Date): Date {
+  return addDays(start, VIAL_DURATION_DAYS[peptide] - 1);
 }
 
 export const VIAL_RANGES = [
