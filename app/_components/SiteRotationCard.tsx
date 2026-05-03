@@ -4,6 +4,7 @@ import {
   ALLOWED_SITES,
   PEPTIDE_LABEL,
   SITE_LABEL,
+  asAppLocal,
   nextSiteFor,
   type Peptide,
   type Site,
@@ -60,7 +61,7 @@ export async function SiteRotationCard() {
                       className="flex justify-between text-xs text-zinc-500"
                     >
                       <span>{SITE_LABEL[l.site]}</span>
-                      <span>{format(l.when, "MMM d")}</span>
+                      <span>{format(asAppLocal(l.when), "MMM d")}</span>
                     </li>
                   ))}
                 </ul>

@@ -1,4 +1,30 @@
-import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays } from "date-fns";
+
+// Single-tenant app for one user in Pacific time. All "what day is it?" and
+// timestamp display logic resolves in this zone regardless of where the
+// process runs (Vercel functions are UTC by default).
+export const APP_TIMEZONE = "America/Los_Angeles";
+
+// Extract calendar parts of `instant` as observed in `tz`.
+function partsInTz(instant: Date, tz: string) {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const out = { year: 0, month: 0, day: 0, hour: 0, minute: 0, second: 0 };
+  for (const p of fmt.formatToParts(instant)) {
+    if (p.type !== "literal" && p.type in out) {
+      out[p.type as keyof typeof out] = Number(p.value);
+    }
+  }
+  return out;
+}
 
 // Build a Date for the given calendar date at LOCAL midnight. Using local
 // midnight (not UTC midnight) keeps date-fns operations like `format`,
@@ -20,9 +46,18 @@ export function fromPrismaDate(d: Date): Date {
   return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 }
 
-// Local-midnight Date for the user's current calendar day.
+// Returns a Date whose server-LOCAL parts equal the given instant's parts in
+// APP_TIMEZONE. Use with date-fns `format()` to render Prisma timestamps
+// (loggedAt, mixedAt) in Pacific regardless of where the function executes.
+export function asAppLocal(instant: Date): Date {
+  const p = partsInTz(instant, APP_TIMEZONE);
+  return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+}
+
+// Local-midnight Date for today's calendar day in APP_TIMEZONE.
 export function todayLocal(): Date {
-  return startOfDay(new Date());
+  const p = partsInTz(new Date(), APP_TIMEZONE);
+  return localDate(p.year, p.month, p.day);
 }
 
 // "YYYY-MM-DD" using local date parts.

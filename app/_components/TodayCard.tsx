@@ -6,6 +6,7 @@ import {
   CYCLE_START,
   PEPTIDE_LABEL,
   SITE_LABEL,
+  asAppLocal,
   dayOfCycle,
   formatDateParam,
   nextSiteFor,
@@ -106,7 +107,7 @@ export async function TodayCard({ date }: { date: Date }) {
                     <SiteChip site={displaySite} />
                     <span className="truncate">
                       {logged
-                        ? `Logged ${format(inj.loggedAt!, "h:mma")}`
+                        ? `Logged ${format(asAppLocal(inj.loggedAt!), "h:mma")}`
                         : "suggested"}
                     </span>
                   </div>

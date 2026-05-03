@@ -8,6 +8,7 @@ import {
   PEPTIDE_LABEL,
   SITE_LABEL,
   SLOT_LABEL,
+  asAppLocal,
   fromPrismaDate,
   todayLocal,
   type Peptide,
@@ -92,7 +93,7 @@ export default async function CalendarPage() {
                             <> · {SITE_LABEL[inj.site as Site]}</>
                           )}
                           {logged && inj.loggedAt && (
-                            <> · {format(inj.loggedAt, "MMM d h:mma")}</>
+                            <> · {format(asAppLocal(inj.loggedAt), "MMM d h:mma")}</>
                           )}
                         </span>
                       </div>
