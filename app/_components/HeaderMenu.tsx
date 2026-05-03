@@ -52,6 +52,13 @@ export function HeaderMenu() {
       {open && (
         <div className="absolute left-0 top-full z-20 mt-1.5 w-44 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-xl">
           <Link
+            href="/"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800"
+          >
+            Dashboard
+          </Link>
+          <Link
             href="/calendar"
             onClick={() => setOpen(false)}
             className="block px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800"
