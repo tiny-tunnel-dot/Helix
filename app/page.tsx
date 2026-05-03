@@ -7,6 +7,7 @@ import { VialCard } from "./_components/VialCard";
 import { WeightCard } from "./_components/WeightCard";
 import { SiteRotationCard } from "./_components/SiteRotationCard";
 import { HeaderMenu } from "./_components/HeaderMenu";
+import HelixLogo from "./_components/HelixLogo";
 import { parseDateParam } from "@/lib/protocol";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +24,8 @@ export default async function DashboardPage({
     <main className="mx-auto max-w-6xl px-3 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4 sm:px-4 sm:py-8">
       <header className="mb-4 flex items-center gap-3 sm:mb-6">
         <HeaderMenu />
-        <Link href="/" className="leading-tight">
-          <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Helix</h1>
-          <p className="text-xs text-zinc-500">Peptide protocol tracker</p>
+        <Link href="/" aria-label="Helix dashboard">
+          <HelixLogo size="md" subtitle="Peptide Protocol" />
         </Link>
       </header>
 

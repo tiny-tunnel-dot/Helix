@@ -2,12 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import type { Site } from "@/lib/protocol";
+import { fromPrismaDate, todayLocal, type Site } from "@/lib/protocol";
 
 export async function logInjection(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const site = String(formData.get("site") ?? "") as Site;
   if (!id) return;
+
+  const inj = await db.injection.findUnique({ where: { id } });
+  if (!inj) return;
+  if (fromPrismaDate(inj.scheduledDate) > todayLocal()) return;
 
   await db.injection.update({
     where: { id },

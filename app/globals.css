@@ -16,8 +16,8 @@
   --color-card-border: var(--card-border);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-libre-franklin);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 body {
