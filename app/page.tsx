@@ -20,16 +20,16 @@ export default async function DashboardPage({
   const selectedDate = parseDateParam(params.date);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
-      <header className="mb-6 flex items-center gap-3">
+    <main className="mx-auto max-w-6xl px-3 pb-[max(env(safe-area-inset-bottom),1rem)] pt-4 sm:px-4 sm:py-8">
+      <header className="mb-4 flex items-center gap-3 sm:mb-6">
         <HeaderMenu />
         <Link href="/" className="leading-tight">
-          <h1 className="text-xl font-semibold tracking-tight">Helix</h1>
+          <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Helix</h1>
           <p className="text-xs text-zinc-500">Peptide protocol tracker</p>
         </Link>
       </header>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         <TodayCard date={selectedDate} />
         <CycleProgressCard />
         <AdherenceCard />

@@ -29,7 +29,7 @@ export async function WeightCard() {
         }
       />
 
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-3xl font-semibold tracking-tight text-zinc-50">
             {today ? `${today.weight} lb` : "—"}
@@ -52,7 +52,7 @@ export async function WeightCard() {
             <WeightInput />
           </div>
         </div>
-        <div className="h-24 flex-1">
+        <div className="h-20 w-full sm:h-24 sm:flex-1">
           <WeightChart
             data={entries.map((e) => ({
               date: format(fromPrismaDate(e.date), "MMM d"),

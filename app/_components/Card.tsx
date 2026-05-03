@@ -22,7 +22,7 @@ export function Card({
   const colSpan = span === 2 ? "lg:col-span-2" : "";
   return (
     <div
-      className={`rounded-2xl border ${TONE_BG[tone]} p-5 ${colSpan} ${className}`}
+      className={`rounded-2xl border ${TONE_BG[tone]} p-4 sm:p-5 ${colSpan} ${className}`}
     >
       {children}
     </div>
