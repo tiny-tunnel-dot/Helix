@@ -124,29 +124,51 @@ export type ScheduledDose = {
   doseUnits: number;
 };
 
-// CJC/Ipa runs on a rolling 5-on / 2-off cycle starting from CYCLE_START
-// (5-on/2-off prevents GH receptor desensitization). BPC/TB runs every day.
-export function isCjcOnDay(date: Date): boolean {
-  const dayIndex = differenceInCalendarDays(date, CYCLE_START);
-  if (dayIndex < 0) return false;
-  return dayIndex % 7 < 5;
+// A historical rule stating that, starting on `effectiveFrom`, the CJC/Ipa
+// off-days are the JS getDay() values in `daysOff`. Forward-only: a rule does
+// not retroactively reinterpret dates before its effective date.
+export type CjcRule = { effectiveFrom: Date; daysOff: number[] };
+
+// Pre-rule default. CYCLE_START is Friday May 1 2026, so Wed/Thu off matches
+// the original `dayIndex % 7 < 5` 5-on/2-off pattern bit-for-bit.
+const DEFAULT_DAYS_OFF: number[] = [3, 4];
+
+export function activeDaysOff(date: Date, rules: CjcRule[]): number[] {
+  let chosen: CjcRule | null = null;
+  for (const r of rules) {
+    if (r.effectiveFrom <= date) {
+      if (!chosen || r.effectiveFrom > chosen.effectiveFrom) chosen = r;
+    }
+  }
+  return chosen?.daysOff ?? DEFAULT_DAYS_OFF;
 }
 
-export function scheduledDosesFor(date: Date): ScheduledDose[] {
+// CJC/Ipa runs on a 5-on / 2-off cycle (prevents GH receptor desensitization).
+// BPC/TB runs every day. Off-days default to Wed/Thu; rules added later can
+// shift them forward in time without rewriting earlier dates.
+export function isCjcOnDay(date: Date, rules: CjcRule[] = []): boolean {
+  if (differenceInCalendarDays(date, CYCLE_START) < 0) return false;
+  return !activeDaysOff(date, rules).includes(date.getDay());
+}
+
+export function scheduledDosesFor(
+  date: Date,
+  rules: CjcRule[] = []
+): ScheduledDose[] {
   const out: ScheduledDose[] = [];
   out.push({ date, slot: "MIDDAY_BPC", peptide: "BPC_TB", doseUnits: 10 });
-  if (isCjcOnDay(date)) {
+  if (isCjcOnDay(date, rules)) {
     out.push({ date, slot: "AM_CJC", peptide: "CJC_IPA", doseUnits: 5 });
     out.push({ date, slot: "PM_CJC", peptide: "CJC_IPA", doseUnits: 5 });
   }
   return out;
 }
 
-export function allScheduledDoses(): ScheduledDose[] {
+export function allScheduledDoses(rules: CjcRule[] = []): ScheduledDose[] {
   const out: ScheduledDose[] = [];
   for (let i = 0; i < CYCLE_DAYS; i++) {
     const d = addDays(CYCLE_START, i);
-    out.push(...scheduledDosesFor(d));
+    out.push(...scheduledDosesFor(d, rules));
   }
   return out;
 }
