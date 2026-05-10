@@ -4,7 +4,9 @@ import {
   CYCLE_START,
   VIAL_RANGES,
   allScheduledDoses,
+  fromPrismaDate,
   parseLocalDate,
+  type CjcRule,
 } from "../lib/protocol";
 
 const db = new PrismaClient();
@@ -24,7 +26,18 @@ async function main() {
   // days) don't leave orphaned rows. Logged history is preserved.
   await db.injection.deleteMany({ where: { loggedAt: null } });
 
-  const doses = allScheduledDoses();
+  const ruleRows = await db.cjcDaysOffRule.findMany({
+    orderBy: { effectiveFrom: "asc" },
+  });
+  const rules: CjcRule[] = ruleRows.map((r) => ({
+    effectiveFrom: fromPrismaDate(r.effectiveFrom),
+    daysOff: r.daysOff
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6),
+  }));
+
+  const doses = allScheduledDoses(rules);
   for (const d of doses) {
     await db.injection.upsert({
       where: {

@@ -44,3 +44,12 @@ model WeightEntry {
   date   DateTime @unique @db.Date
   weight Float
 }
+
+model CjcDaysOffRule {
+  id            String   @id @default(cuid())
+  effectiveFrom DateTime @db.Date
+  daysOff       String
+  createdAt     DateTime @default(now())
+
+  @@index([effectiveFrom])
+}
