@@ -72,6 +72,13 @@ export function HeaderMenu() {
           >
             Vials
           </Link>
+          <Link
+            href="/settings"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800"
+          >
+            Settings
+          </Link>
           <form action={logout}>
             <button
               type="submit"
