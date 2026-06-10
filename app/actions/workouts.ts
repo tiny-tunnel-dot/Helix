@@ -14,6 +14,7 @@ import {
   type OffDayType,
   type SkeletonMovement,
 } from "@/lib/workout-engine";
+import { fillBig3Blocks } from "@/lib/milo-generate";
 import {
   getProgramConfig,
   getSession,
@@ -73,6 +74,10 @@ export async function startBig3Session(): Promise<void> {
     },
   });
 
+  // Milo swaps the default accessories for judgment picks and writes the
+  // focus + opening message. No-ops without an API key — defaults stand.
+  await fillBig3Blocks(session.id);
+
   revalidateWorkouts(session.id);
   redirect(`/workouts/session/${session.id}`);
 }
@@ -81,6 +86,13 @@ const offDayTypeSchema = z.enum(["RESET", "TUNE", "BUILD"]);
 
 export async function startOffDaySession(formData: FormData): Promise<void> {
   const type = offDayTypeSchema.parse(formData.get("type")) as OffDayType;
+  // Milo's tailored pitch for the chosen option (when it was generated)
+  // becomes the session focus and the opening chat message.
+  const pitch = z
+    .string()
+    .max(400)
+    .nullish()
+    .parse(formData.get("description") || null);
 
   const existing = await db.workoutSession.findFirst({
     where: { status: "ACTIVE" },
@@ -98,11 +110,21 @@ export async function startOffDaySession(formData: FormData): Promise<void> {
       category: "OFFDAY",
       offDayType: type,
       calfType: calf,
-      focus: skeleton.description,
+      focus: pitch || skeleton.description,
       status: "ACTIVE",
       movements: { create: toMovementRows(skeleton.movements) },
     },
   });
+
+  if (pitch) {
+    await db.chatMessage.create({
+      data: {
+        sessionId: session.id,
+        role: "MILO",
+        content: `${skeleton.title}: ${pitch} Log as you go — tell me how it feels.`,
+      },
+    });
+  }
 
   revalidateWorkouts(session.id);
   redirect(`/workouts/session/${session.id}`);
@@ -220,20 +242,19 @@ const amendSchema = z.object({
 });
 
 // Mid-session audible: rewrite an upcoming card, keep the audit trail.
+// Delegates to the same pure mutation Milo's amendMovement tool uses.
 export async function amendMovement(
   input: z.infer<typeof amendSchema>
 ): Promise<void> {
   const { movementId, reason, changes } = amendSchema.parse(input);
   const movement = await db.sessionMovement.findUnique({
     where: { id: movementId },
-    include: { session: { select: { id: true, status: true } } },
+    select: { sessionId: true },
   });
-  if (!movement || movement.session.status === "COMPLETED") return;
-  await db.sessionMovement.update({
-    where: { id: movementId },
-    data: { ...changes, amended: true, amendReason: reason },
-  });
-  revalidateWorkouts(movement.session.id);
+  if (!movement) return;
+  const { applyAmendMovement } = await import("@/lib/milo-tools");
+  await applyAmendMovement(movement.sessionId, movementId, changes, reason);
+  revalidateWorkouts(movement.sessionId);
 }
 
 const createFlagSchema = z.object({

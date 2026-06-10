@@ -15,20 +15,56 @@ const RPE_CHOICES = [
 export function CompletePanel({
   session,
   projectedNext,
+  miloEnabled,
 }: {
   session: SessionView;
   projectedNext: string;
+  miloEnabled: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [cnsLoad, setCnsLoad] = useState("MODERATE");
-  const [jointLoad, setJointLoad] = useState("LOW");
-  const [jointArea, setJointArea] = useState("");
-  const [grade, setGrade] = useState("");
-  const [rpe, setRpe] = useState<string>("");
-  const [feedback, setFeedback] = useState("");
+  // Initialize from any existing draft (Milo's finalizeSummary tool, or a
+  // previous visit to this panel).
+  const [cnsLoad, setCnsLoad] = useState(session.cnsLoad ?? "MODERATE");
+  const [jointLoad, setJointLoad] = useState(session.jointLoad ?? "LOW");
+  const [jointArea, setJointArea] = useState(session.jointLoadArea ?? "");
+  const [grade, setGrade] = useState(session.performanceGrade ?? "");
+  const [rpe, setRpe] = useState<string>(
+    session.sessionRPE != null ? String(session.sessionRPE) : ""
+  );
+  const [feedback, setFeedback] = useState(session.userFeedback ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [draftRequested, setDraftRequested] = useState(false);
   const [pending, start] = useTransition();
+
+  // "Last movement done → Milo drafts the captured fields": when the panel
+  // opens with no draft yet, ask Milo once and fill the form in place.
+  async function requestDraft() {
+    if (!miloEnabled || draftRequested) return;
+    setDraftRequested(true);
+    setDrafting(true);
+    try {
+      const res = await fetch("/api/milo/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session.id }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data?.draft) {
+        setCnsLoad(data.draft.cnsLoad ?? "MODERATE");
+        setJointLoad(data.draft.jointLoad ?? "LOW");
+        setJointArea(data.draft.jointLoadArea ?? "");
+        setGrade(data.draft.performanceGrade ?? "");
+        setRpe(data.draft.sessionRPE != null ? String(data.draft.sessionRPE) : "");
+        setFeedback(data.draft.feedback ?? "");
+      }
+    } catch {
+      // Manual entry stands.
+    } finally {
+      setDrafting(false);
+    }
+  }
 
   const workingSets = useMemo(
     () => countWorkingSets(session.movements),
@@ -50,7 +86,10 @@ export function CompletePanel({
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          if (session.cnsLoad == null) requestDraft();
+        }}
         className="w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 py-3.5 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/15"
       >
         Finish session →
@@ -62,7 +101,9 @@ export function CompletePanel({
     <div className="rounded-2xl border border-emerald-500/30 bg-[var(--color-card)] p-4">
       <div className="text-sm font-semibold text-zinc-100">Session summary</div>
       <p className="mt-0.5 text-xs text-zinc-500">
-        Computed by the engine — confirm the judgment calls below.
+        {drafting
+          ? "Milo is drafting the judgment calls…"
+          : "Computed by the engine — confirm the judgment calls below."}
       </p>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-xl bg-zinc-900/70 p-3 text-sm">

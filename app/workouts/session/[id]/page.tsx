@@ -7,6 +7,7 @@ import { LiveSession } from "@/app/_components/workout/LiveSession";
 import { MaxBumpButton } from "@/app/_components/workout/MaxBumpButton";
 import { ResolveFlagButton } from "@/app/_components/workout/FlagControls";
 import { db } from "@/lib/db";
+import { MILO_OFFLINE_MESSAGE, miloEnabled } from "@/lib/milo";
 import { fromPrismaDate } from "@/lib/protocol";
 import {
   CALF_LABEL,
@@ -55,6 +56,11 @@ function toView(row: SessionRow): SessionView {
     focus: row.focus,
     status: row.status,
     sessionRPE: row.sessionRPE,
+    cnsLoad: row.cnsLoad,
+    jointLoad: row.jointLoad,
+    jointLoadArea: row.jointLoadArea,
+    performanceGrade: row.performanceGrade,
+    userFeedback: row.userFeedback,
     movements: row.movements.map((m) => ({
       id: m.id,
       block: m.block,
@@ -310,10 +316,17 @@ export default async function SessionPage({
     ...prior,
   ]);
 
-  const activeFlags = await db.flag.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { createdAt: "desc" },
-  });
+  const [activeFlags, chatMessages] = await Promise.all([
+    db.flag.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.chatMessage.findMany({
+      where: { sessionId: row.id },
+      orderBy: { createdAt: "asc" },
+      take: 200,
+    }),
+  ]);
 
   return (
     <LiveSession
@@ -328,6 +341,13 @@ export default async function SessionPage({
         severity: f.severity,
         status: f.status,
       }))}
+      chatMessages={chatMessages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+      }))}
+      miloEnabled={miloEnabled()}
+      miloOfflineNote={MILO_OFFLINE_MESSAGE}
     />
   );
 }

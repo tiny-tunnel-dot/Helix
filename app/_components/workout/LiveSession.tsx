@@ -9,6 +9,7 @@ import {
 import { SetLogger } from "./SetLogger";
 import { MovementCard } from "./MovementCard";
 import { CompletePanel } from "./CompletePanel";
+import { MiloChat, type ChatMessageView } from "./MiloChat";
 import { AddFlagForm, ResolveFlagButton } from "./FlagControls";
 import type { FlagView, LastPerformance, SessionView } from "./types";
 
@@ -49,11 +50,17 @@ export function LiveSession({
   lastPerformance,
   projectedNext,
   flags,
+  chatMessages,
+  miloEnabled,
+  miloOfflineNote,
 }: {
   session: SessionView;
   lastPerformance: LastPerformance;
   projectedNext: string;
   flags: FlagView[];
+  chatMessages: ChatMessageView[];
+  miloEnabled: boolean;
+  miloOfflineNote: string;
 }) {
   const main = session.movements.find((m) => m.role === "MAIN_LIFT");
   const mainLogged = main
@@ -80,13 +87,21 @@ export function LiveSession({
               {session.dateISO} · {session.calfType === "STANDING" ? "Standing" : "Seated"} calves
             </div>
           </div>
-          {main && main.targetSets ? (
-            <div className="ml-auto rounded-full bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300">
-              Set {Math.min(mainLogged + 1, main.targetSets)}/{main.targetSets}
-            </div>
-          ) : (
-            <div className="ml-auto" />
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {main && main.targetSets ? (
+              <div className="rounded-full bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300">
+                Set {Math.min(mainLogged + 1, main.targetSets)}/
+                {main.targetSets}
+              </div>
+            ) : null}
+            <a
+              href="#milo-chat"
+              aria-label="Jump to Milo chat"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 text-sm hover:bg-zinc-900"
+            >
+              💬
+            </a>
+          </div>
         </div>
       </header>
 
@@ -148,7 +163,18 @@ export function LiveSession({
           </div>
         </section>
 
-        <CompletePanel session={session} projectedNext={projectedNext} />
+        <MiloChat
+          sessionId={session.id}
+          messages={chatMessages}
+          enabled={miloEnabled}
+          offlineNote={miloOfflineNote}
+        />
+
+        <CompletePanel
+          session={session}
+          projectedNext={projectedNext}
+          miloEnabled={miloEnabled}
+        />
 
         <button
           type="button"

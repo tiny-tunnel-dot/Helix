@@ -51,6 +51,12 @@ export type SessionView = {
   focus: string | null;
   status: string;
   sessionRPE: number | null;
+  // captured-summary draft (Milo's finalizeSummary or a prior visit)
+  cnsLoad: string | null;
+  jointLoad: string | null;
+  jointLoadArea: string | null;
+  performanceGrade: string | null;
+  userFeedback: string | null;
   movements: MovementView[];
 };
 
