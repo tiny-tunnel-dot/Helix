@@ -1121,13 +1121,12 @@ export type Rollup = {
 //   sets (excluding ramp-up) + Block 3. Cardio never counts.
 // - Main Lift Performed = lift – intensity – top set.
 // - Next Lift Target = nextBig3 including this session.
-export function rollupSummary(
-  session: EngineSession,
-  priorHistory: EngineSession[],
-  cfg: ProgramConfigLike
-): Rollup {
+// Working-set count, shared by the rollup and the live confirm-screen
+// preview: Block 1/3 movements (mobility + cardio excluded) at their
+// actual-or-target sets, main lift at its logged non-warmup sets.
+export function countWorkingSets(movements: EngineMovement[]): number {
   let total = 0;
-  for (const m of session.movements ?? []) {
+  for (const m of movements) {
     if (m.role === "MOBILITY" || m.role === "CARDIO") continue;
     if (m.role === "MAIN_LIFT") {
       const logged = (m.sets ?? []).filter((s) => s.setType !== "WARMUP");
@@ -1136,6 +1135,15 @@ export function rollupSummary(
     }
     total += m.actualSets ?? m.targetSets ?? 0;
   }
+  return total;
+}
+
+export function rollupSummary(
+  session: EngineSession,
+  priorHistory: EngineSession[],
+  cfg: ProgramConfigLike
+): Rollup {
+  const total = countWorkingSets(session.movements ?? []);
 
   const top = topSetOf(session);
   const lift = session.mainLift as Lift | null;
