@@ -12,6 +12,17 @@ import {
 const db = new PrismaClient();
 
 async function main() {
+  // Workout module: ensure the ProgramConfig singleton exists. Maxes are
+  // edited in Settings afterwards; only create, never clobber.
+  const existingProgram = await db.programConfig.findUnique({
+    where: { id: "singleton" },
+  });
+  if (!existingProgram) {
+    await db.programConfig.create({
+      data: { id: "singleton", deadlift1RM: 287, bench1RM: 185 },
+    });
+  }
+
   await db.cycleConfig.upsert({
     where: { id: "singleton" },
     create: {

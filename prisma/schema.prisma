@@ -53,3 +53,140 @@ model CjcDaysOffRule {
 
   @@index([effectiveFrom])
 }
+
+// ============ WORKOUT MODULE ============
+// Convention: String fields with documented allowed values (see
+// lib/workout-engine.ts), matching the peptide models. All loads in lbs.
+
+model ProgramConfig {
+  // singleton, like CycleConfig
+  id            String   @id @default("singleton")
+  deadlift1RM   Int // 287
+  bench1RM      Int // ~185
+  zercherCapPct Int      @default(72) // cap = pct of DL 1RM (~70-75%)
+  lightPctLow   Int      @default(60)
+  lightPctHigh  Int      @default(70)
+  heavyPctLow   Int      @default(85)
+  heavyPctHigh  Int      @default(90)
+  updatedAt     DateTime @updatedAt
+}
+
+model WorkoutSession {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  category   String // "BIG3" | "OFFDAY"
+  mainLift   String? // "DEADLIFT" | "BENCH" | "ZERCHER"
+  intensity  String? // "LIGHT" | "HEAVY"
+  offDayType String? // "RESET" | "TUNE" | "BUILD"
+  calfType   String // "STANDING" | "SEATED"  (required, both types)
+  focus      String? // LLM-written, 1-2 lines
+  status     String   @default("PLANNED") // "PLANNED" | "ACTIVE" | "COMPLETED"
+
+  // captured summary (judgment / user input)
+  cnsLoad          String? // "LOW" | "MODERATE" | "HIGH" | "VERY_HIGH"
+  jointLoad        String? // "LOW" | "MODERATE" | "HIGH"
+  jointLoadArea    String? // "Left Knee"
+  performanceGrade String? // "A" | "B+" | "C" ...
+  userFeedback     String?
+  sessionRPE       Float? // overall / off-day RPE
+
+  // computed summary (cached snapshot for historical fidelity)
+  totalWorkingSets Int?
+  nextMainLift     String?
+  nextIntensity    String?
+
+  // Apple Watch snapshot (optional, attach later — the health-app seam)
+  activeCalories   Int?
+  workoutMinutes   Int?
+  avgHR            Int?
+  peakHR           Int?
+  watchWorkoutType String?
+  watchNotes       String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  movements     SessionMovement[]
+  messages      ChatMessage[]
+  flagsBorn     Flag[]            @relation("FlagBorn")
+  flagsResolved Flag[]            @relation("FlagResolved")
+
+  @@index([date])
+  @@index([category])
+}
+
+model SessionMovement {
+  id        String         @id @default(cuid())
+  sessionId String
+  session   WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  block     Int // 1 | 2 | 3
+  order     Int
+  role      String // ACTIVATION | MOBILITY | CALF | MAIN_LIFT | COMPLEMENTARY | INTEGRITY | CARDIO
+  name      String
+
+  // prescription (engine/LLM planned). reps/load are STRINGS (ranges, %, BW, time).
+  targetSets Int?
+  targetReps String? // "8-12", "3"
+  targetRPE  Float?
+  targetLoad String? // "BW", "260", "60-70% (172-201)"
+  cue        String?
+  duration   String? // mobility "30-60 sec" / cardio "20 min Zone 2"
+
+  // coarse actuals (accessories/mobility/cardio log at this grain)
+  actualSets Int?
+  actualReps String?
+  actualRPE  Float?
+  actualLoad String?
+
+  // mid-session audible audit trail
+  amended     Boolean @default(false)
+  amendReason String?
+
+  sets SetLog[] // granular per-set, mainly MAIN_LIFT
+
+  @@index([sessionId, block, order])
+}
+
+model SetLog {
+  // granular sets — where volume + e1RM live
+  id         String          @id @default(cuid())
+  movementId String
+  movement   SessionMovement @relation(fields: [movementId], references: [id], onDelete: Cascade)
+  setIndex   Int
+  setType    String // WARMUP | WORKING | TOP | BACKOFF
+  load       Int
+  reps       Int
+  rpe        Float?
+
+  @@index([movementId, setIndex])
+}
+
+model Flag {
+  // "Milo Flags" as objects
+  id                String          @id @default(cuid())
+  issue             String
+  bodyArea          String?
+  type              String // PAIN | FATIGUE | TIGHTNESS | REGRESSION | DELOAD | OTHER
+  status            String          @default("ACTIVE") // ACTIVE | RESOLVED
+  severity          String? // LOW | MED | HIGH
+  bornSessionId     String
+  bornSession       WorkoutSession  @relation("FlagBorn", fields: [bornSessionId], references: [id])
+  resolvedSessionId String?
+  resolvedSession   WorkoutSession? @relation("FlagResolved", fields: [resolvedSessionId], references: [id])
+  createdAt         DateTime        @default(now())
+  resolvedAt        DateTime?
+
+  @@index([status])
+}
+
+model ChatMessage {
+  // the live in-session transcript
+  id        String         @id @default(cuid())
+  sessionId String
+  session   WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String // "USER" | "MILO"
+  content   String
+  createdAt DateTime       @default(now())
+
+  @@index([sessionId, createdAt])
+}
