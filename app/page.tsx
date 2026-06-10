@@ -6,6 +6,7 @@ import { WeekStripCard } from "./_components/WeekStripCard";
 import { VialCard } from "./_components/VialCard";
 import { WeightCard } from "./_components/WeightCard";
 import { SiteRotationCard } from "./_components/SiteRotationCard";
+import { WorkoutCard } from "./_components/workout/WorkoutCard";
 import { HeaderMenu } from "./_components/HeaderMenu";
 import HelixLogo from "./_components/HelixLogo";
 import { parseDateParam } from "@/lib/protocol";
@@ -39,6 +40,7 @@ export default async function DashboardPage({
         <VialCard peptide="CJC_IPA" />
         <SiteRotationCard />
 
+        <WorkoutCard />
         <WeightCard />
       </div>
     </main>
